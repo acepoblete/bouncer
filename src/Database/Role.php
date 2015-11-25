@@ -2,7 +2,7 @@
 
 namespace Silber\Bouncer\Database;
 
-use App\User;
+use RamJackCRM\Domain\Admin\User;
 use Illuminate\Database\Eloquent\Model;
 
 class Role extends Model

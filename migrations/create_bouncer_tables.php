@@ -1,10 +1,11 @@
 <?php
 
+use RamJackCRM\Domain\Admin\User;
+
 use Silber\Bouncer\Database\Role;
 use Silber\Bouncer\Database\Models;
 use Silber\Bouncer\Database\Ability;
 
-use App\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
@@ -18,9 +19,12 @@ class CreateBouncerTables extends Migration
     public function up()
     {
         Schema::create($this->table(Ability::class), function (Blueprint $table) {
-            $table->increments('id');
+
+            $table->uuid('id');
+            $table->primay('id');
+
             $table->string('name');
-            $table->integer('entity_id')->unsigned()->nullable();
+            $table->uuid('entity_id')->nullable();
             $table->string('entity_type')->nullable();
             $table->timestamps();
 
@@ -28,14 +32,17 @@ class CreateBouncerTables extends Migration
         });
 
         Schema::create($this->table(Role::class), function (Blueprint $table) {
-            $table->increments('id');
+
+            $table->uuid('id');
+            $table->primary('id');
+
             $table->string('name')->unique();
             $table->timestamps();
         });
 
         Schema::create('user_roles', function (Blueprint $table) {
-            $table->integer('role_id')->unsigned();
-            $table->integer('user_id')->unsigned();
+            $table->uuid('role_id');
+            $table->uuid('user_id');
 
             $table->unique(['role_id', 'user_id']);
 
@@ -44,8 +51,8 @@ class CreateBouncerTables extends Migration
         });
 
         Schema::create('user_abilities', function (Blueprint $table) {
-            $table->integer('ability_id')->unsigned();
-            $table->integer('user_id')->unsigned();
+            $table->uuid('ability_id');
+            $table->uuid('user_id');
 
             $table->unique(['ability_id', 'user_id']);
 
@@ -54,8 +61,8 @@ class CreateBouncerTables extends Migration
         });
 
         Schema::create('role_abilities', function (Blueprint $table) {
-            $table->integer('ability_id')->unsigned();
-            $table->integer('role_id')->unsigned();
+            $table->uuid('ability_id');
+            $table->uuid('role_id');
 
             $table->unique(['ability_id', 'role_id']);
 
