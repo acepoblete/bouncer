@@ -2,7 +2,7 @@
 
 namespace Silber\Bouncer\Database;
 
-use App\User;
+use RamJack\Domain\Admin\User;
 
 class Models
 {

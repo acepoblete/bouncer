@@ -2,17 +2,29 @@
 
 namespace Silber\Bouncer\Database;
 
-use App\User;
+use Eloquence\Database\Traits\UUIDModel;
+use RamJack\Domain\Admin\User;
 use Illuminate\Database\Eloquent\Model;
 
 class Ability extends Model
 {
+
+    use UUIDModel;
+
     /**
      * The table associated with the model.
      *
      * @var string
      */
     protected $table = 'abilities';
+
+    /**
+     * Since we are NOT using ints for ids,
+     * we have to tell eloquent not to auto increment the id field
+     *
+     * @var bool
+     */
+    public $incrementing = false;
 
     /**
      * The attributes that are mass assignable.
