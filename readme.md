@@ -16,14 +16,18 @@ This package adds a bouncer at Laravel's access gate.
   - [Getting all abilities for a user](#getting-all-abilities-for-a-user)
   - [Authorizing users](#authorizing-users)
   - [Refreshing the cache](#refreshing-the-cache)
+  - [Seeding roles and abilities](#seeding-roles-and-abilities)
 - [Cheat sheet](#cheat-sheet)
 - [License](#license)
 
 ## Introduction
 
-Bouncer provides a mechanism to handle simple roles and abilities in [Laravel's ACL](http://laravel.com/docs/5.1/authorization). With an expressive and fluent syntax, it stays out of your way as much as possible: use it when you want, ignore it when you don't.
+Bouncer provides a mechanism to handle roles and abilities in [Laravel's ACL](http://laravel.com/docs/5.1/authorization). With an expressive and fluent syntax, it stays out of your way as much as possible: use it when you want, ignore it when you don't.
+
+For a quick, glanceable list of Bouncer's features, check out [the cheat sheet](#cheat-sheet).
 
 Bouncer works well with other abilities you have hard-coded in your own app. Your code always takes precedence: if your code allows an action, the bouncer will not interfere.
+
 
 Once installed, you can simply tell the bouncer what you want to allow at the gate:
 
@@ -40,8 +44,6 @@ Bouncer::allow($user)->to('edit', $post);
 ```
 
 When you check abilities at the gate, the bouncer will be consulted first. If he sees an ability that has been granted to the current user (whether directly, or through a role) he'll authorize the check.
-
-For a quick glanceable list of the bouncer's features, check out [the cheat sheet](#cheat-sheet).
 
 ## Installation
 
@@ -222,6 +224,14 @@ If the role you're checking starts with a vowel, you might want to use the `an` 
 Bouncer::is($user)->an('admin');
 ```
 
+For the inverse, you can also check if a user *doesn't* have a specific role:
+
+```php
+Bouncer::is($user)->notA('moderator');
+
+Bouncer::is($user)->notAn('admin');
+```
+
 You can check if a user has one of many roles:
 
 ```php
@@ -234,10 +244,18 @@ You can also check if the user has all of the given roles:
 Bouncer::is($user)->all('editor', 'moderator');
 ```
 
+You can also check if a user has none of the given roles:
+
+```php
+Bouncer::is($user)->notAn('editor', 'moderator');
+```
+
 These checks can also be done directly on the user:
 
 ```php
 $user->is('admin');
+
+$user->isNot('admin');
 
 $user->isAll('editor', 'moderator');
 ```
@@ -267,7 +285,7 @@ These call directly into the `Gate` class.
 
 ### Refreshing the cache
 
-All queries executed by the bouncer are cached for the current request. If you enable [cross-request caching](#enabling-cache), the cache will presist across different requests.
+All queries executed by the bouncer are cached for the current request. If you enable [cross-request caching](#enabling-cache), the cache will persist across different requests.
 
 Whenever you need, you can fully refresh the bouncer's cache:
 
@@ -275,7 +293,7 @@ Whenever you need, you can fully refresh the bouncer's cache:
 Bouncer::refresh();
 ```
 
-> **Note:** fully refreshing the cache **for all users** requires cache tags. Not all cache drivers support this. Refer to [Laravel's documentation](http://laravel.com/docs/5.1/cache#cache-tags) to see if your driver supports cache tags.
+> **Note:** fully refreshing the cache for all users uses [cache tags](http://laravel.com/docs/5.1/cache#cache-tags) if they're available. Not all cache drivers support this. Refer to [Laravel's documentation](http://laravel.com/docs/5.1/cache#cache-tags) to see if your driver supports cache tags. If your driver does not support cache tags, calling `refresh` might be a little slow, depending on the amount of users in your system.
 
 Alternatively, you can refresh the cache only for a specific user:
 
@@ -283,7 +301,44 @@ Alternatively, you can refresh the cache only for a specific user:
 Bouncer::refreshFor($user);
 ```
 
-Refreshing the cache **for a specific user** is available even if your cache driver does not support cache tags.
+### Seeding roles and abilities
+
+Depending on your project, you might have a set of roles and abilities that you want to pre-seed when you deploy your application. Bouncer ships with seeding functionality to make this as easy as possible.
+
+First, register your seeding callback in your `AppServiceProvider`'s `boot` method:
+
+```php
+Bouncer::seeder(function () {
+    Bouncer::allow('admin')->to(['ban-users', 'delete-posts']);
+    Bouncer::allow('editor')->to('delete-posts');
+});
+```
+
+You can also register a seeder class to be used for seeding:
+
+```php
+Bouncer::seeder(MySeeder::class);
+```
+
+By default, the `seed` method will be used. If you need to, you can specify a different method:
+
+```php
+Bouncer::seeder('MySeeder@run');
+```
+
+Once you've registered your seeder, you can run the seeds via the included artisan command:
+
+```
+$ php artisan bouncer:seed
+```
+
+Should you find a need to run the seeds from within your codebase, you can do that too:
+
+```php
+Bouncer::seed();
+```
+
+Note that it's ok to run the seeds multiple times. If you make a change to your seeder, simply run the seeds again. However, do note that any information that has previously been seeded will *not* be automatically reverted.
 
 ## Cheat Sheet
 
@@ -304,6 +359,8 @@ Bouncer::retract('admin')->from($user);
 
 $check = Bouncer::is($user)->a('subscriber');
 $check = Bouncer::is($user)->an('admin');
+$check = Bouncer::is($user)->notA('subscriber');
+$check = Bouncer::is($user)->notAn('admin');
 $check = Bouncer::is($user)->a('moderator', 'editor');
 $check = Bouncer::is($user)->all('moderator', 'editor');
 
@@ -318,6 +375,9 @@ $check = Bouncer::denies('delete', $post);
 Bouncer::cache();
 Bouncer::refresh();
 Bouncer::refreshFor($user);
+
+Bouncer::seeder($callback);
+Bouncer::seed();
 ```
 
 Some of this functionality is also available directly on the user model:
@@ -337,6 +397,7 @@ $user->retract('admin');
 $check = $user->is('subscriber');
 $check = $user->is('moderator', 'editor');
 $check = $user->isAll('moderator', 'editor');
+$check = $user->isNot('subscriber', 'moderator');
 
 $abilities = $user->getAbilities();
 ```
